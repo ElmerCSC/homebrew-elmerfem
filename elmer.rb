@@ -27,7 +27,7 @@ class Elmer < Formula
   depends_on "oce" if build.with? "elmergui"
   depends_on "vtk" => "with-qt" if build.with? "elmergui"
   depends_on "qwt" if build.with? "elmergui"
-  depends_on "paraview" => :optional
+  #depends_on "paraview" => :optional
 
   def install
     cmake_args = %W[-DCMAKE_INSTALL_PREFIX=#{prefix}]
@@ -36,7 +36,7 @@ class Elmer < Formula
     cmake_args << "-DWITH_Mumps:BOOL=TRUE" if build.with? "mumps"
     cmake_args << "-DWITH_MPI:BOOL=FALSE" if build.without? "mpi"
     cmake_args << "-DWITH_MPI:BOOL=TRUE" if build.with? "mpi"
-    cmake_args << "-DWITH_PARAVIEW:BOOL=TRUE" if build.with? "paraview"
+    #cmake_args << "-DWITH_PARAVIEW:BOOL=TRUE" if build.with? "paraview"
     cmake_args << "-DWITH_OpenMP:BOOL=TRUE" if build.with? "openmp"
 
     exten = (OS.mac?) ? "dylib" : "so"

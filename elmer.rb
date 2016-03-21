@@ -12,6 +12,7 @@ class Elmer < Formula
   option "with-elmerice", "Build ElmerIce"
   option "with-elmergui", "Build ElmerGUI"
   option "with-openmp", "Enable OpenMP support (experimental)"
+  option "with-testing", "Run the quick tests"
 
   depends_on :mpi => [:f90, :recommended]
 
@@ -57,6 +58,7 @@ class Elmer < Formula
       system "cmake", "../", *cmake_args, *std_cmake_args
       system "make"
       system "make", "install"
+      system "ctest -L quick" if build.with? "testing"
     end
   end
 

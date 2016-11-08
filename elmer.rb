@@ -44,8 +44,8 @@ class Elmer < Formula
     cmake_args << "-DBLAS_LIBRARIES:STRING=#{Formula["openblas"].opt_lib}/libopenblas.#{exten};-lpthread"
     cmake_args << "-DLAPACK_LIBRARIES:STRING=#{Formula["openblas"].opt_lib}/libopenblas.#{exten};-lpthread"
 
-    ENV["CC"] = "#{Formula["gcc"].opt_bin}/gcc-#{Formula["gcc"].version_suffix}"
-    ENV["CXX"] = "#{Formula["gcc"].opt_bin}/g++-#{Formula["gcc"].version_suffix}"
+    #ENV["CC"] = "#{Formula["gcc"].opt_bin}/gcc-#{Formula["gcc"].version_suffix}"
+    #ENV["CXX"] = "#{Formula["gcc"].opt_bin}/g++-#{Formula["gcc"].version_suffix}"
     if build.with? "elmergui"
       cmake_args << "-DWITH_ELMERGUI:BOOL=TRUE"
       cmake_args << "-DWITH_QWT:BOOL=TRUE"
@@ -153,5 +153,6 @@ class Elmer < Formula
 
     system "ElmerGrid", "1", "2", "geomstiff.grd"
     system "ElmerSolver", "test.sif"
+    assert_equal "1\n", IO.read("TEST.PASSED")
   end
 end

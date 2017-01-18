@@ -13,6 +13,7 @@ class Elmer < Formula
   option "with-elmergui", "Build ElmerGUI"
   option "with-openmp", "Enable OpenMP support (experimental)"
   option "with-testing", "Run the quick tests"
+  option "with-qt5", "Use qt5 with ElmerGUI"
 
   depends_on :mpi => [:f90, :recommended]
 
@@ -24,7 +25,8 @@ class Elmer < Formula
   depends_on "hypre" => :recommended
   depends_on "mumps" => :recommended
 
-  depends_on "qt" if build.with? "elmergui"
+  depends_on "qt5" if build.with? "elmergui" and build.with? "qt5"
+  depends_on "qt" if build.with? "elmergui" and not build.with? "qt5"
   depends_on "oce" if build.with? "elmergui"
   depends_on "vtk" => "with-qt" if build.with? "elmergui"
   depends_on "qwt" if build.with? "elmergui"
@@ -51,6 +53,7 @@ class Elmer < Formula
       cmake_args << "-DWITH_QWT:BOOL=TRUE"
       cmake_args << "-DWITH_OCC:BOOL=TRUE"
       cmake_args << "-DWITH_VTK:BOOL=TRUE"
+      cmake_args << "-DWITH_QT5=TRUE" if build.with? "qt5"
       cmake_args << "-DQWT_INCLUDE_DIR=#{Formula["qwt"].lib}/qwt.framework/Headers"
     end
 

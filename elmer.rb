@@ -5,8 +5,8 @@ class Elmer < Formula
   head "https://github.com/ElmerCSC/elmerfem.git", :branch => "devel"
 
   stable do
-    url "https://github.com/ElmerCSC/elmerfem/archive/release-8.0.tar.gz"
-    sha256 "ac7cb29e1dba205113ed9705a5852ee11117252495fa2b125adecd2b057c8a8f"
+    url "https://github.com/ElmerCSC/elmerfem/archive/release-8.2.tar.gz"
+    sha256 "ed4c87895c76003dd81faa464b6d0f38225d43e584f75290df21df629d0a4ecc"
   end
 
   option "with-elmerice", "Build ElmerIce"

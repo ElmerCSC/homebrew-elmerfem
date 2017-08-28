@@ -1,5 +1,9 @@
 class Elmer < Formula
-  desc "Elmer finite element solver"
+  desc """
+  Elmer finite element solver
+
+  * Requires homebrew/science to be tapped for MUMPS.
+  """
   homepage "http://elmerfem.org"
 
   head "https://github.com/ElmerCSC/elmerfem.git", :branch => "devel"
@@ -37,15 +41,12 @@ class Elmer < Formula
     cmake_args << "-DWITH_Mumps:BOOL=TRUE" if build.with? "mumps"
     cmake_args << "-DWITH_MPI:BOOL=FALSE" if build.without? "mpi"
     cmake_args << "-DWITH_MPI:BOOL=TRUE" if build.with? "mpi"
-    #cmake_args << "-DWITH_PARAVIEW:BOOL=TRUE" if build.with? "paraview"
     cmake_args << "-DWITH_OpenMP:BOOL=TRUE" if build.with? "openmp"
 
     exten = (OS.mac?) ? "dylib" : "so"
     cmake_args << "-DBLAS_LIBRARIES:STRING=#{Formula["openblas"].opt_lib}/libopenblas.#{exten};-lpthread"
     cmake_args << "-DLAPACK_LIBRARIES:STRING=#{Formula["openblas"].opt_lib}/libopenblas.#{exten};-lpthread"
 
-    ENV["CC"] = "#{Formula["gcc"].opt_bin}/gcc-#{Formula["gcc"].version_suffix}"
-    ENV["CXX"] = "#{Formula["gcc"].opt_bin}/g++-#{Formula["gcc"].version_suffix}"
     if build.with? "elmergui"
       cmake_args << "-DWITH_ELMERGUI:BOOL=TRUE"
       cmake_args << "-DWITH_QWT:BOOL=TRUE"

@@ -3,6 +3,7 @@ class Elmer < Formula
   Elmer finite element solver
 
   * Requires homebrew/science to be tapped for MUMPS.
+  * OCC, VTK and QWT (for convergence plot) are not supported
   """
   homepage "http://elmerfem.org"
 
@@ -28,11 +29,10 @@ class Elmer < Formula
   depends_on "hypre" => :recommended
   depends_on "mumps" => :recommended
 
-  depends_on "qt" if build.with? "elmergui"
-  depends_on "oce" if build.with? "elmergui"
-  depends_on "vtk" => "with-qt" if build.with? "elmergui"
-  depends_on "qwt" if build.with? "elmergui"
-  #depends_on "paraview" => :optional
+  depends_on "qt5" if build.with? "elmergui"
+  # depends_on "oce" if build.with? "elmergui"
+  # depends_on "vtk" => "with-qt" if build.with? "elmergui"
+  # depends_on "qwt" if build.with? "elmergui"
 
   def install
     cmake_args = %W[-DCMAKE_INSTALL_PREFIX=#{prefix}]
@@ -49,10 +49,11 @@ class Elmer < Formula
 
     if build.with? "elmergui"
       cmake_args << "-DWITH_ELMERGUI:BOOL=TRUE"
-      cmake_args << "-DWITH_QWT:BOOL=TRUE"
-      cmake_args << "-DWITH_OCC:BOOL=TRUE"
-      cmake_args << "-DWITH_VTK:BOOL=TRUE"
+      # cmake_args << "-DWITH_QWT:BOOL=TRUE"
+      # cmake_args << "-DWITH_OCC:BOOL=TRUE"
+      # cmake_args << "-DWITH_VTK:BOOL=TRUE"
       cmake_args << "-DQWT_INCLUDE_DIR=#{Formula["qwt"].lib}/qwt.framework/Headers"
+      cmake_args << "-DWITH_QT5:BOOL=TRUE"
     end
 
     mkdir "build" do

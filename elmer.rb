@@ -19,10 +19,9 @@ class Elmer < Formula
   option "with-openmp", "Enable OpenMP support (experimental)"
   option "with-testing", "Run the quick tests"
 
-  depends_on :mpi => [:f90, :recommended]
+  depends_on "open-mpi" => [:f90, :recommended]
 
   depends_on "cmake" => :build
-  depends_on :fortran => :build
   depends_on "gcc" => :build
   depends_on "openblas"
   depends_on "scalapack"

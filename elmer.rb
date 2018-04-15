@@ -38,8 +38,8 @@ class Elmer < Formula
     cmake_args << "-DWITH_Hypre:BOOL=TRUE" if build.with? "hypre"
     cmake_args << "-DWITH_ElmerIce:BOOL=TRUE" if build.with? "elmerice"
     cmake_args << "-DWITH_Mumps:BOOL=TRUE" if build.with? "mumps"
-    cmake_args << "-DWITH_MPI:BOOL=FALSE" if build.without? "mpi"
-    cmake_args << "-DWITH_MPI:BOOL=TRUE" if build.with? "mpi"
+    cmake_args << "-DWITH_MPI:BOOL=FALSE" if build.without? "open-mpi"
+    cmake_args << "-DWITH_MPI:BOOL=TRUE" if build.with? "open-mpi"
     cmake_args << "-DWITH_OpenMP:BOOL=TRUE" if build.with? "openmp"
 
     exten = (OS.mac?) ? "dylib" : "so"

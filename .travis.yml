@@ -1,0 +1,17 @@
+os:
+  - osx
+osx_image: xcode9.3
+
+before_install:
+  - brew tap juhanikataja/homebrew-elmerfem 
+  # - brew tap Homebrew/homebrew-science
+# && brew update && brew bundle
+
+script:
+  - brew cask uninstall oclint
+  - brew install elmer --HEAD --with-elmerice --without-mumps --verbose
+
+notifications:
+  email: change
+  flowdock:
+    secure: "lu9jDOsW8lSOJr/d/7VGxU9nG1AAhc4kPKgfiOnLsBp2CJXVPAmbyaFMmaMfdJdHgM7pGW6fnoJSBtwyYfsB/GmXtmX9vKGwiKfAAGeUIGS15wzllHKjRQm3hDQ/MnO5wmj6r7dcSPjfLhy5ZFuiihoOSsBd9LpcMOetEsg99tA="

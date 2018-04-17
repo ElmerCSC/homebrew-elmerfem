@@ -19,10 +19,9 @@ class Elmer < Formula
   option "with-openmp", "Enable OpenMP support (experimental)"
   option "with-testing", "Run the quick tests"
 
-  depends_on :mpi => [:f90, :recommended]
+  depends_on "open-mpi" => [:f90, :recommended]
 
   depends_on "cmake" => :build
-  depends_on :fortran => :build
   depends_on "gcc" => :build
   depends_on "openblas"
   depends_on "scalapack"
@@ -39,8 +38,8 @@ class Elmer < Formula
     cmake_args << "-DWITH_Hypre:BOOL=TRUE" if build.with? "hypre"
     cmake_args << "-DWITH_ElmerIce:BOOL=TRUE" if build.with? "elmerice"
     cmake_args << "-DWITH_Mumps:BOOL=TRUE" if build.with? "mumps"
-    cmake_args << "-DWITH_MPI:BOOL=FALSE" if build.without? "mpi"
-    cmake_args << "-DWITH_MPI:BOOL=TRUE" if build.with? "mpi"
+    cmake_args << "-DWITH_MPI:BOOL=FALSE" if build.without? "open-mpi"
+    cmake_args << "-DWITH_MPI:BOOL=TRUE" if build.with? "open-mpi"
     cmake_args << "-DWITH_OpenMP:BOOL=TRUE" if build.with? "openmp"
 
     exten = (OS.mac?) ? "dylib" : "so"

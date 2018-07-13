@@ -24,7 +24,7 @@ class Elmer < Formula
   depends_on "cmake" => :build
   depends_on "gcc" => :build
   depends_on "openblas"
-  depends_on "scalapack"
+  # depends_on "scalapack"
   depends_on "hypre" => :recommended
   depends_on "mumps" => :recommended
 

@@ -56,7 +56,7 @@ class Elmer < Formula
     end
 
     mkdir "build" do
-      system "cmake", "../", *cmake_args, *std_cmake_args
+      system "cmake -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_CXX_COMPILER=/usr/bin/g++", "../", *cmake_args, *std_cmake_args
       system "make"
       system "make", "install"
       system "ctest -L quick" if build.with? "testing"

@@ -10,6 +10,7 @@ before_install:
 
 script:
   - brew cask uninstall oclint || echo "Skipping"
+  - brew install gcc
   - brew install elmer --HEAD --with-elmerice --without-mumps --verbose
 
 notifications:

@@ -4,7 +4,7 @@ osx_image: xcode9.3
 
 before_install:
   - brew tap juhanikataja/homebrew-elmerfem
-  - cd /usr/local/bin && ln -s gcc gcc-10 && ln -s g++ g++-10
+  - cd /usr/local/bin && ln -s gcc-7 gcc-10 && ln -s g++-7 g++-10
   # - brew tap Homebrew/homebrew-science
 # && brew update && brew bundle
 

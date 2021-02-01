@@ -22,7 +22,7 @@ class Elmer < Formula
   depends_on "open-mpi" => [:f90, :recommended]
 
   depends_on "cmake" => :build
-  depends_on "gcc" => :build
+  depends_on "gcc" => ["10", :build]
   depends_on "openblas"
   # depends_on "scalapack"
   depends_on "hypre" => :recommended
@@ -56,7 +56,7 @@ class Elmer < Formula
     end
 
     mkdir "build" do
-      system "cmake", "../", *cmake_args, *std_cmake_args
+      system "cmake -DCMAKE_C_COMPILER=/usr/local/bin/gcc -DCMAKE_CXX_COMPILER=/usr/local/bin/g++", "../", *cmake_args, *std_cmake_args
       system "make"
       system "make", "install"
       system "ctest -L quick" if build.with? "testing"

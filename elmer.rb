@@ -5,50 +5,14 @@ class Elmer < Formula
   head "https://github.com/ElmerCSC/elmerfem.git", branch: "devel"
 
   stable do
-    url "https://github.com/ElmerCSC/elmerfem/archive/refs/tags/release-9.0.tar.gz"
-    sha256 "08c5bf261e87ff37456c1aa0372db3c83efabe4473ea3ea0b8ec66f5944d1aa0"
+    url "https://github.com/ElmerCSC/elmerfem/archive/refs/tags/release-26.2.tar.gz"
+    sha256 "def442937d69234f7e1b36e902a7fcd2a428d671e62f0275bf05aeef7ebbcade"
 
     # CMake 3.19 for compatibility with old CHECK_TYPE_SIZE syntax
     resource "cmake" do
       url "https://github.com/Kitware/CMake/releases/download/v3.19.8/cmake-3.19.8-macos-universal.tar.gz"
       sha256 "0976d23d982af05dcbfb3aa34fcb62ead43bea27f0e3bb95222f2a78161423f2"
     end
-
-    # Fix Qwt 6.2 <qwt_compat.h> deprecation
-    patch do
-      url "https://github.com/ElmerCSC/elmerfem/commit/48e9430ccb858ca5bda28b967a0c84b51e2404b2.patch?full_index=1"
-      sha256 "707032d1f899dacc62ffd7c6f09aff6aaa22d6eaa353b707808bef639d774398"
-    end
-
-    # Fix Qt5 compile issue
-    patch do
-      url "https://github.com/ElmerCSC/elmerfem/commit/e057b0d46a6d1708a0d322bc73d70594a63de447.patch?full_index=1"
-      sha256 "0abf3d771b720edd3dc27a4b0115f12e325381284b1162568dbbc780c76cf934"
-    end
-
-    # Fix DCRComplexSolve.F90 issue
-    patch do
-      url "https://github.com/ElmerCSC/elmerfem/commit/a28b3521f3c81bd7fe7176555815ffd1d35cf4b2.patch?full_index=1"
-      sha256 "ae29e1089fa009345c941fdf11ed346bd21a776874b70f9d2bf393b4bd3e1e71"
-    end
-
-    patch do
-      url "https://github.com/ElmerCSC/elmerfem/commit/96a33930ee23e785f33bcb257398f1ccca8fdf99.patch?full_index=1"
-      sha256 "7935cd13ec54afe84de3ac2c3d3b676110f9926092abcfd414f913311920c09b"
-    end
-
-    patch do
-      url "https://github.com/ElmerCSC/elmerfem/commit/8f9f2c703b020dc6d21cbaa1cb8b05abbbd7ded1.patch?full_index=1"
-      sha256 "4372532a4bc792e4d43466c813f1962c6964389abaa62f545a311a49bda76676"
-    end
-
-    patch do
-      url "https://github.com/ElmerCSC/elmerfem/commit/54fd87054f687305644b92d0525a3f0cd4423a93.patch?full_index=1"
-      sha256 "ea8c5e85230d5e6a08dc04cb2e23161bca19940b9f8c092777586dcfa491dedc"
-    end
-
-    # Comment out hard-coded C/C++ compiler paths
-    patch :DATA
   end
 
   # =============================================================================
@@ -101,7 +65,7 @@ class Elmer < Formula
     end
 
     # Compiler configuration
-    gcc_formula_str = build.stable? ? "gcc@11" : "gcc"
+    gcc_formula_str = "gcc"
     gcc_formula = Formula[gcc_formula_str]
     gcc_version = gcc_formula.version.major
     use_gcc = build.with?("gcc")
@@ -387,76 +351,3 @@ class Elmer < Formula
     system bin/"ElmerSolver", "test.sif"
   end
 end
-
-__END__
---- a/CMakeLists.txt	2020-11-10 19:52:44
-+++ b/CMakeLists.txt	2025-12-31 06:18:57
-@@ -14,9 +14,9 @@
-   # message("you need to have gcc-gfrotran installed using HomeBrew")
-   # set(CMAKE_C_COMPILER "/usr/bin/gcc")
-   # set(CMAKE_CXX_COMPILER "/usr/bin/g++")
--  set(CMAKE_C_COMPILER "/usr/local/bin/gcc-10")
--  set(CMAKE_CXX_COMPILER "/usr/local/bin/g++-10")
--  set(CMAKE_Fortran_COMPILER "/usr/local/bin/gfortran")
-+  # set(CMAKE_C_COMPILER "/usr/local/bin/gcc-10")
-+  # set(CMAKE_CXX_COMPILER "/usr/local/bin/g++-10")
-+  # set(CMAKE_Fortran_COMPILER "/usr/local/bin/gfortran")
-   # set(BLA_VENDOR "OpenBLAS")
-   # option(HUNTER_ENABLED "Enable Hunter package manager support" OFF)
-   # set (CMAKE_GENERATOR "Unix Makefiles" CACHE INTERNAL "" FORCE)
-@@ -178,13 +178,6 @@
- ENDIF()
-
- IF(WITH_OpenMP)
--  # Advanced properties
--  MARK_AS_ADVANCED(
--    OpenMP_C_FLAGS
--    OpenMP_Fortran_FLAGS
--    OpenMP_CXX_FLAGS
--    )
--
-   # Add OpenMP flags to compilation flags
-   # if(APPLE)
-   #   if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-@@ -204,12 +197,13 @@
-   #     set(OpenMP_libiomp5_LIBRARY ${OpenMP_CXX_LIB_NAMES})
-   #   endif()
-   # else()
--    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
--    SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
--    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-   # endif()
- 
-   FIND_PACKAGE(OpenMP REQUIRED)
-+
-+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-+  SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
-+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-   
-   # Test compiler support for OpenMP 4.0 features used
-   INCLUDE(testOpenMP40)
-
---- a/ElmerGUI/CMakeLists.txt	2020-11-10 19:52:44
-+++ b/ElmerGUI/CMakeLists.txt	2026-01-03 06:09:27
-@@ -18,8 +18,8 @@
-
- IF(WITH_QT5)
-   MESSAGE(STATUS "------------------------------------------------")
--  IF(WIN32)
--    MESSAGE(STATUS "Qt5 Windows packaging")
-+  IF(WIN32 OR APPLE)
-+    MESSAGE(STATUS "Qt5 Windows/MacOS packaging")
-     SET(QT5_PKG_LIST Qt5OpenGL Qt5Xml Qt5Script Qt5Gui Qt5Core Qt5Svg Qt5Widgets Qt5PrintSupport)
-   ELSE()
-     MESSAGE(STATUS "Qt5 non-Windows packaging")
-
---- a/ElmerGUI/Application/CMakeLists.txt	2020-11-10 19:52:44
-+++ b/ElmerGUI/Application/CMakeLists.txt	2026-01-03 06:20:05
-@@ -189,6 +189,7 @@
- ENDIF()
-
- IF(WITH_QT5)
-+  FIND_PACKAGE(Qt5 COMPONENTS Widgets REQUIRED)
-   QT5_WRAP_UI(UI_HEADERS ${FORMS})
-   QT5_ADD_RESOURCES(UI_RESOURCES ElmerGUI.qrc)
-   ADD_DEFINITIONS(-DWITH_QT5)

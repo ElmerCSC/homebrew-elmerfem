@@ -7,12 +7,6 @@ class Elmer < Formula
   stable do
     url "https://github.com/ElmerCSC/elmerfem/archive/refs/tags/release-26.2.tar.gz"
     sha256 "def442937d69234f7e1b36e902a7fcd2a428d671e62f0275bf05aeef7ebbcade"
-
-    # CMake 3.19 for compatibility with old CHECK_TYPE_SIZE syntax
-    resource "cmake" do
-      url "https://github.com/Kitware/CMake/releases/download/v3.19.8/cmake-3.19.8-macos-universal.tar.gz"
-      sha256 "0976d23d982af05dcbfb3aa34fcb62ead43bea27f0e3bb95222f2a78161423f2"
-    end
   end
 
   # =============================================================================
@@ -53,16 +47,8 @@ class Elmer < Formula
 
   def install
     # Determine CMake binary
-    if build.stable?
-      resource("cmake").stage do
-        (buildpath/"local_cmake").install "CMake.app/Contents"
-      end
-      cmake_bin = buildpath/"local_cmake/Contents/bin/cmake"
-      ctest_bin = buildpath/"local_cmake/Contents/bin/ctest"
-    else
-      cmake_bin = Formula["cmake"].opt_bin/"cmake"
-      ctest_bin = Formula["cmake"].opt_bin/"ctest"
-    end
+    cmake_bin = Formula["cmake"].opt_bin/"cmake"
+    ctest_bin = Formula["cmake"].opt_bin/"ctest"
 
     # Compiler configuration
     gcc_formula_str = "gcc"
@@ -166,7 +152,7 @@ class Elmer < Formula
     cmake_args << "-DCMAKE_CXX_FLAGS=#{cxx_flags}"
 
     # Apply GCC/Qt compatibility patch if needed
-    if build.head? && use_gcc && build.with?("elmergui")
+    if use_gcc && build.with?("elmergui")
       apply_gcc_qt6_patch
     end
 
@@ -189,27 +175,11 @@ class Elmer < Formula
     qt_version = qt_formula.version.major.to_i
     qwt_dep ="qwt"
 
-    if build.head? && qt_version >= 6
-      cmake_args << "-DWITH_QT6=ON"
-      qt_lib = Formula["qtbase"].opt_lib
-      cmake_args << "-DQt6_DIR=#{qt_lib}/cmake/Qt6"
-      %w[Xml PrintSupport OpenGL OpenGLWidgets].each do |mod|
-        cmake_args << "-DQt6#{mod}_DIR=#{qt_lib}/cmake/Qt6#{mod}"
-      end
-    else
-      # stable build needs Qt5
-      qt5_dep = "qt@5"
-      qwt_dep ="qwt-qt5"
-
-      qt5_installed = Formula[qt5_dep].any_version_installed?
-      qwt_installed = Formula[qwt_dep].any_version_installed?
-
-      dep_message = ->(p) { "ElmerGUI requires #{p}. To install: brew install #{p}" }
-      odie dep_message.call(qt5_dep) unless qt5_installed
-      odie dep_message.call(qwt_dep) unless qwt_installed
-
-      cmake_args << "-DWITH_QT5=ON"
-      cmake_args << "-DQt5_DIR=#{Formula[qt5_dep].opt_lib}/cmake/Qt5"
+    cmake_args << "-DWITH_QT6=ON"
+    qt_lib = Formula["qtbase"].opt_lib
+    cmake_args << "-DQt6_DIR=#{qt_lib}/cmake/Qt6"
+    %w[Xml PrintSupport OpenGL OpenGLWidgets].each do |mod|
+      cmake_args << "-DQt6#{mod}_DIR=#{qt_lib}/cmake/Qt6#{mod}"
     end
 
     # Qwt configuration
@@ -245,7 +215,7 @@ class Elmer < Formula
   end
 
   def caveats
-    return if build.without?("elmergui") || build.stable?
+    return if build.without?("elmergui")
 
     <<~EOS
       If ElmerGUI fails to run with the following error message:

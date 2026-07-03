@@ -85,7 +85,7 @@ class Elmer < Formula
     # Compiler flags
     c_flags = "#{sys_root} -Wno-error=implicit-function-declaration -Wno-implicit-function-declaration"
     cxx_flags = sys_root
-    cxx_flags += " -Wno-deprecated-declarations" if build.head? && use_gcc
+    cxx_flags += " -Wno-deprecated-declarations" if use_gcc
 
     # =============================================================================
     # CMake Arguments

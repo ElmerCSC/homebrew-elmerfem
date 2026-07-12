@@ -68,16 +68,8 @@ class Elmer < Formula
     # Build sysroot flags
     sys_root = use_gcc ? "--sysroot=#{sdk_path}" : "-isysroot #{sdk_path}"
 
-    # For stable builds with GCC, try to find an older SDK if available
+    # For stable builds with GCC, ensure the compiler is available
     if build.stable? && use_gcc
-      older_sdk = Dir["/Library/Developer/CommandLineTools/SDKs/MacOSX1[0-4].sdk"].max
-      if older_sdk
-        sys_root = "--sysroot=#{older_sdk}"
-        sdk_path = older_sdk
-      else
-        opoo "No older macOS SDK found; GCC build may have compatibility issues"
-      end
-
       unless gcc_formula.any_version_installed?
         odie "Elmer version requires #{gcc_formula_str}. Run: brew install #{gcc_formula_str}"
       end
@@ -144,7 +136,8 @@ class Elmer < Formula
     # =============================================================================
     # ElmerGUI Configuration
     # =============================================================================
-    configure_elmergui(cmake_args) if build.with?("elmergui")
+    configure_elmergui(cmake_args, use_gcc) if build.with?("elmergui")
+
 
     # SDK and flags
     cmake_args << "-DCMAKE_OSX_SYSROOT=#{sdk_path}"
@@ -162,22 +155,46 @@ class Elmer < Formula
     end
   end
 
-  def configure_elmergui(cmake_args)
+  def configure_elmergui(cmake_args, use_gcc)
     cmake_args << "-DWITH_ELMERGUI=ON"
 
-    # Qt version detection
-    qt_formula = Formula["qt"]
-    qt_version = qt_formula.version.major.to_i
-    qwt_dep ="qwt"
+    if use_gcc
+      # Homebrew's Qt6 is built with Clang/libc++ and exports APIs taking std:: types
+      # (e.g. QDir::mkdir(std::optional<...>)) only with libc++ mangling, which
+      # GCC/libstdc++ never emits -- so a GCC ElmerGUI cannot link against Qt6. Qt5's
+      # API surface does not cross that std:: ABI boundary, so GCC links Qt5 cleanly.
+      # This is how the branch built ElmerGUI with GCC prior to the Qt6-everywhere change.
+      qt5_dep = "qt@5"
+      qwt_dep = "qwt-qt5"
+      dep_message = ->(p) { "ElmerGUI with --with-gcc requires #{p}. To install: brew install #{p}" }
+      odie dep_message.call(qt5_dep) unless Formula[qt5_dep].any_version_installed?
+      odie dep_message.call(qwt_dep) unless Formula[qwt_dep].any_version_installed?
 
-    cmake_args << "-DWITH_QT6=ON"
-    qt_lib = Formula["qtbase"].opt_lib
-    cmake_args << "-DQt6_DIR=#{qt_lib}/cmake/Qt6"
-    %w[Xml PrintSupport OpenGL OpenGLWidgets].each do |mod|
-      cmake_args << "-DQt6#{mod}_DIR=#{qt_lib}/cmake/Qt6#{mod}"
+      cmake_args << "-DWITH_QT5=ON"
+      qt5_lib = Formula[qt5_dep].opt_lib
+      cmake_args << "-DQt5_DIR=#{qt5_lib}/cmake/Qt5"
+      # ElmerGUI FIND_PACKAGEs each Qt5 component; qt@5 is keg-only so point each
+      # component at its config dir explicitly (mirrors the Qt6 branch below).
+      %w[Core Gui Widgets OpenGL Xml Svg PrintSupport Script].each do |mod|
+        cmake_args << "-DQt5#{mod}_DIR=#{qt5_lib}/cmake/Qt5#{mod}"
+      end
+
+      # ElmerGUI's Qt5 package list only includes Qt5Widgets on WIN32; on macOS it is
+      # omitted, but the Application needs it (QT5_WRAP_UI). Add it to the list.
+      inreplace "ElmerGUI/CMakeLists.txt",
+                "SET(QT5_PKG_LIST Qt5OpenGL Qt5Xml Qt5Script Qt5Gui Qt5Core Qt5Svg Qt5PrintSupport)",
+                "SET(QT5_PKG_LIST Qt5OpenGL Qt5Xml Qt5Script Qt5Gui Qt5Core Qt5Svg Qt5Widgets Qt5PrintSupport)"
+    else
+      qwt_dep = "qwt"
+      cmake_args << "-DWITH_QT6=ON"
+      qt_lib = Formula["qtbase"].opt_lib
+      cmake_args << "-DQt6_DIR=#{qt_lib}/cmake/Qt6"
+      %w[Xml PrintSupport OpenGL OpenGLWidgets].each do |mod|
+        cmake_args << "-DQt6#{mod}_DIR=#{qt_lib}/cmake/Qt6#{mod}"
+      end
     end
 
-    # Qwt configuration
+    # Qwt configuration (qwt for Qt6, qwt-qt5 for Qt5)
     qwt_formula = Formula[qwt_dep]
     cmake_args << "-DWITH_QWT=ON"
     cmake_args << "-DQWT_INCLUDE_DIR=#{qwt_formula.opt_lib}/qwt.framework/Headers"

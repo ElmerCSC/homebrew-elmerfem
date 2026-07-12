@@ -12,6 +12,7 @@ class Elmer < Formula
   # =============================================================================
   # Build Options
   # =============================================================================
+  option "with-accelerate", "Build with Apple Accelerate support"
   option "with-elmerice", "Build ElmerIce glaciology module"
   option "with-elmergui", "Build ElmerGUI graphical interface"
   option "with-gcc", "Use GCC instead of Clang for C/C++ compilation"
@@ -105,9 +106,14 @@ class Elmer < Formula
     cmake_args << "-DCMAKE_Fortran_COMPILER=#{gcc_formula.opt_bin}/gfortran-#{gcc_version}"
 
     # Linear algebra
-    blas_lib = Formula["openblas"].opt_lib/shared_library("libopenblas")
-    cmake_args << "-DBLAS_LIBRARIES:STRING=#{blas_lib};-lpthread"
-    cmake_args << "-DLAPACK_LIBRARIES:STRING=#{blas_lib};-lpthread"
+    if build.with?("accelerate")
+      cmake_args << "-DBLAS_LIBRARIES:STRING=-framework Accelerate"
+      cmake_args << "-DLAPACK_LIBRARIES:STRING=-framework Accelerate"
+    else
+      blas_lib = Formula["openblas"].opt_lib/shared_library("libopenblas")
+      cmake_args << "-DBLAS_LIBRARIES:STRING=#{blas_lib};-lpthread"
+      cmake_args << "-DLAPACK_LIBRARIES:STRING=#{blas_lib};-lpthread"
+    end
 
     # Optional solver features
     cmake_args << "-DWITH_ElmerIce=ON" if build.with?("elmerice")
@@ -132,12 +138,6 @@ class Elmer < Formula
         ENV.append "LDFLAGS", "-L#{libomp.opt_lib} -lomp"
         c_flags += " -I#{libomp.opt_include}"
         cxx_flags += " -I#{libomp.opt_include}"
-
-        if build.stable?
-          cmake_args << "-DOpenMP_C_FLAGS=-Xpreprocessor -fopenmp"
-          cmake_args << "-DOpenMP_CXX_FLAGS=-Xpreprocessor -fopenmp"
-          cmake_args << "-DOpenMP_Fortran_FLAGS=-fopenmp"
-        end
       end
     end
 
@@ -150,11 +150,6 @@ class Elmer < Formula
     cmake_args << "-DCMAKE_OSX_SYSROOT=#{sdk_path}"
     cmake_args << "-DCMAKE_C_FLAGS=#{c_flags}"
     cmake_args << "-DCMAKE_CXX_FLAGS=#{cxx_flags}"
-
-    # Apply GCC/Qt compatibility patch if needed
-    if use_gcc && build.with?("elmergui")
-      apply_gcc_qt6_patch
-    end
 
     cmake_args << "-DBUILD_TESTING=1" if build.with?("testing")
 
@@ -191,27 +186,6 @@ class Elmer < Formula
     # Optional GUI features
     cmake_args << "-DWITH_OCC=#{build.with?("opencascade") ? "ON" : "OFF"}"
     cmake_args << "-DWITH_VTK=#{build.with?("vtk") ? "ON" : "OFF"}"
-  end
-
-  def apply_gcc_qt6_patch
-    patch_content = <<~PATCH
-      --- ElmerGUI/CMakeLists.txt
-      +++ ElmerGUI/CMakeLists.txt
-      @@ -35,6 +35,10 @@
-         FOREACH(_pkg ${QT6_PKG_LIST})
-           FIND_PACKAGE(${_pkg} PATHS ${QT6_PATH} REQUIRED)
-         ENDFOREACH()
-      +  
-      +  IF(APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-      +    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D'QT_IGNORE_DEPRECATIONS\\(x\\)=x'")
-      +  ENDIF()
-         
-         ADD_DEFINITIONS(-DWITH_QT6)
-         MESSAGE(STATUS "  [ElmerGUI] Qt6:               " ${Qt6_FOUND})
-    PATCH
-
-    (buildpath/"qt-gcc.patch").write(patch_content)
-    system "patch", "-p0", "-i", "qt-gcc.patch"
   end
 
   def caveats

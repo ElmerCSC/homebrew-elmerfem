@@ -16,6 +16,7 @@ class Elmer < Formula
   option "with-elmerice", "Build ElmerIce glaciology module"
   option "with-elmergui", "Build ElmerGUI graphical interface"
   option "with-gcc", "Use GCC instead of Clang for C/C++ compilation"
+  option "with-mumps", "Build with the MUMPS sparse direct solver (requires the brewsci/num tap)"
   option "with-openmp", "Build with OpenMP support"
   option "with-testing", "Run the quick tests after build"
 
@@ -34,7 +35,9 @@ class Elmer < Formula
 
   # Optional: Solver libraries
   depends_on "hypre" => :optional
-  depends_on "mumps" => :optional
+  # MUMPS is no longer in homebrew-core; it lives in the brewsci/num tap. Pull it
+  # in only when requested so the formula still loads without that tap tapped.
+  depends_on "brewsci/num/brewsci-mumps" if build.with?("mumps")
 
   # Optional: Parallelization
   depends_on "libomp" => :optional
@@ -121,8 +124,15 @@ class Elmer < Formula
 
     # Optional solver features
     cmake_args << "-DWITH_ElmerIce=ON" if build.with?("elmerice")
+
+    # NOTE: the 3 mgdyn_airgap2 tests (HYPRE BiCGStab + BoomerAMG block
+    # preconditioning) abort with MPI_ABORT/Errorcode -1. This reproduces with
+    # both HYPRE 2.33.0 and 3.1.0 and with either Accelerate or OpenBLAS, so it
+    # is an upstream Elmer/HYPRE issue, not a build-configuration problem.
     cmake_args << "-DWITH_Hypre=ON" if build.with?("hypre")
-    cmake_args << "-DWITH_Mumps=ON" if build.with?("mumps")
+
+    configure_mumps(cmake_args) if build.with?("mumps")
+
     cmake_args << "-DWITH_MPI=#{build.with?("open-mpi") ? "ON" : "OFF"}"
 
     # OpenMP configuration
@@ -178,6 +188,18 @@ class Elmer < Formula
         end
       end
     end
+  end
+
+  def configure_mumps(cmake_args)
+    cmake_args << "-DWITH_Mumps=ON"
+    cmake_args << "-DMUMPS_ROOT=#{Formula["brewsci/num/brewsci-mumps"].opt_prefix}"
+    # brewsci-mumps is built with ScaLAPACK ordering plus (Par)Metis, so Elmer's
+    # FindMumps also requires ScaLAPACK, ParMetis and Metis. Point each finder at
+    # the right keg through the *_ROOT environment hints they consult. Note metis.h
+    # lives in brewsci-metis (not brewsci-parmetis), so METIS_ROOT is set separately.
+    ENV["SCALAPACK_ROOT"] = Formula["scalapack"].opt_prefix.to_s
+    ENV["PARMETIS_ROOT"]  = Formula["brewsci/num/brewsci-parmetis"].opt_prefix.to_s
+    ENV["METIS_ROOT"]     = Formula["brewsci/num/brewsci-metis"].opt_prefix.to_s
   end
 
   def configure_elmergui(cmake_args, use_gcc)

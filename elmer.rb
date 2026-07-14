@@ -79,6 +79,7 @@ class Elmer < Formula
     c_flags = "#{sys_root} -Wno-error=implicit-function-declaration -Wno-implicit-function-declaration"
     cxx_flags = sys_root
     cxx_flags += " -Wno-deprecated-declarations" if use_gcc
+    fortran_flags = ""
 
     # =============================================================================
     # CMake Arguments
@@ -101,6 +102,17 @@ class Elmer < Formula
     if build.with?("accelerate")
       cmake_args << "-DBLAS_LIBRARIES:STRING=-framework Accelerate"
       cmake_args << "-DLAPACK_LIBRARIES:STRING=-framework Accelerate"
+      # Apple's legacy Accelerate BLAS uses the f2c calling convention for
+      # complex-valued functions: ZDOTC/ZDOTU/CDOTC/CDOTU return their result
+      # via a hidden first argument rather than in registers. gfortran's default
+      # ABI returns complex in registers, so Elmer's complex solvers that call
+      # these directly (e.g. complex BiCGStab(l), harmonic/eigen EM solvers)
+      # crash inside libBLAS ZDOTC or get wrong results. Building the Fortran
+      # sources with -ff2c switches gfortran to the matching convention.
+      # -ff2c implies -fsecond-underscore (which would rename symbols to e.g.
+      # zdotc__ and break linking against Accelerate and libgomp), so pair it
+      # with -fno-second-underscore to keep the standard single-underscore names.
+      fortran_flags += " -ff2c -fno-second-underscore"
     else
       blas_lib = Formula["openblas"].opt_lib/shared_library("libopenblas")
       cmake_args << "-DBLAS_LIBRARIES:STRING=#{blas_lib};-lpthread"
@@ -143,6 +155,7 @@ class Elmer < Formula
     cmake_args << "-DCMAKE_OSX_SYSROOT=#{sdk_path}"
     cmake_args << "-DCMAKE_C_FLAGS=#{c_flags}"
     cmake_args << "-DCMAKE_CXX_FLAGS=#{cxx_flags}"
+    cmake_args << "-DCMAKE_Fortran_FLAGS=#{fortran_flags.strip}" unless fortran_flags.strip.empty?
 
     cmake_args << "-DBUILD_TESTING=1" if build.with?("testing")
 

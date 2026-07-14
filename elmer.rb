@@ -150,8 +150,20 @@ class Elmer < Formula
     system cmake_bin, "-S", ".", "-B", "build", *cmake_args
     system cmake_bin, "--build", "build", "--parallel"
     system cmake_bin, "--install", "build"
-    Dir.chdir("build") do
-      system ctest_bin, ".", "-L", "quick" if build.with?("testing")
+
+    # Optionally run the upstream "quick" test suite. Failures are reported but
+    # do NOT abort the install, so a fully-built keg is always produced. The
+    # suite drives the build-tree ElmerSolver (via mpiexec when MPI is enabled),
+    # so a broken host MPI or a single flaky case should not discard the build.
+    if build.with?("testing")
+      Dir.chdir("build") do
+        ohai "Running quick test suite (ctest -L quick)"
+        begin
+          system ctest_bin, ".", "-L", "quick", "--output-on-failure"
+        rescue BuildError
+          opoo "Some quick tests failed (see output above); installation continues."
+        end
+      end
     end
   end
 

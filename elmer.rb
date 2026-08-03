@@ -70,11 +70,9 @@ class Elmer < Formula
     # Build sysroot flags
     sys_root = use_gcc ? "--sysroot=#{sdk_path}" : "-isysroot #{sdk_path}"
 
-    # For stable builds with GCC, ensure the compiler is available
-    if build.stable? && use_gcc
-      unless gcc_formula.any_version_installed?
-        odie "Elmer version requires #{gcc_formula_str}. Run: brew install #{gcc_formula_str}"
-      end
+    # Ensure the compiler is available
+    unless gcc_formula.any_version_installed?
+      odie "Elmer version requires #{gcc_formula_str}. Run: brew install #{gcc_formula_str}"
     end
 
     # Compiler flags

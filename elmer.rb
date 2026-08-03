@@ -12,7 +12,6 @@ class Elmer < Formula
   # =============================================================================
   # Build Options
   # =============================================================================
-  option "with-accelerate", "Build with Apple Accelerate support"
   option "with-elmerice", "Build ElmerIce glaciology module"
   option "with-elmergui", "Build ElmerGUI graphical interface"
   option "with-gcc", "Use GCC instead of Clang for C/C++ compilation"
@@ -102,25 +101,9 @@ class Elmer < Formula
     cmake_args << "-DCMAKE_Fortran_COMPILER=#{gcc_formula.opt_bin}/gfortran-#{gcc_version}"
 
     # Linear algebra
-    if build.with?("accelerate")
-      cmake_args << "-DBLAS_LIBRARIES:STRING=-framework Accelerate"
-      cmake_args << "-DLAPACK_LIBRARIES:STRING=-framework Accelerate"
-      # Apple's legacy Accelerate BLAS uses the f2c calling convention for
-      # complex-valued functions: ZDOTC/ZDOTU/CDOTC/CDOTU return their result
-      # via a hidden first argument rather than in registers. gfortran's default
-      # ABI returns complex in registers, so Elmer's complex solvers that call
-      # these directly (e.g. complex BiCGStab(l), harmonic/eigen EM solvers)
-      # crash inside libBLAS ZDOTC or get wrong results. Building the Fortran
-      # sources with -ff2c switches gfortran to the matching convention.
-      # -ff2c implies -fsecond-underscore (which would rename symbols to e.g.
-      # zdotc__ and break linking against Accelerate and libgomp), so pair it
-      # with -fno-second-underscore to keep the standard single-underscore names.
-      fortran_flags += " -ff2c -fno-second-underscore"
-    else
-      blas_lib = Formula["openblas"].opt_lib/shared_library("libopenblas")
-      cmake_args << "-DBLAS_LIBRARIES:STRING=#{blas_lib};-lpthread"
-      cmake_args << "-DLAPACK_LIBRARIES:STRING=#{blas_lib};-lpthread"
-    end
+    blas_lib = Formula["openblas"].opt_lib/shared_library("libopenblas")
+    cmake_args << "-DBLAS_LIBRARIES:STRING=#{blas_lib};-lpthread"
+    cmake_args << "-DLAPACK_LIBRARIES:STRING=#{blas_lib};-lpthread"
 
     # Optional solver features
     cmake_args << "-DWITH_ElmerIce=ON" if build.with?("elmerice")

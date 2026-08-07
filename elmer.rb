@@ -2,12 +2,10 @@ class Elmer < Formula
   desc "Open source multiphysical simulation software (finite element solver)"
   homepage "https://elmerfem.org"
 
-  head "https://github.com/ElmerCSC/elmerfem.git", branch: "devel"
+  url "https://github.com/ElmerCSC/elmerfem/archive/refs/tags/release-26.2.tar.gz"
+  sha256 "def442937d69234f7e1b36e902a7fcd2a428d671e62f0275bf05aeef7ebbcade"
 
-  stable do
-    url "https://github.com/ElmerCSC/elmerfem/archive/refs/tags/release-26.2.tar.gz"
-    sha256 "def442937d69234f7e1b36e902a7fcd2a428d671e62f0275bf05aeef7ebbcade"
-  end
+  head "https://github.com/ElmerCSC/elmerfem.git", branch: "devel"
 
   # =============================================================================
   # Build Options
@@ -33,10 +31,10 @@ class Elmer < Formula
   depends_on "openblas"
 
   # Optional: Solver libraries
-  depends_on "hypre" => :optional
   # MUMPS is no longer in homebrew-core; it lives in the brewsci/num tap. Pull it
   # in only when requested so the formula still loads without that tap tapped.
   depends_on "brewsci/num/brewsci-mumps" if build.with?("mumps")
+  depends_on "hypre" => :optional
 
   # Optional: Parallelization
   depends_on "libomp" => :optional
@@ -50,8 +48,8 @@ class Elmer < Formula
 
   def install
     # Determine CMake binary
-    cmake_bin = Formula["cmake"].opt_bin/"cmake"
-    ctest_bin = Formula["cmake"].opt_bin/"ctest"
+    cmake_bin = formula_opt_bin("cmake")/"cmake"
+    ctest_bin = formula_opt_bin("cmake")/"ctest"
 
     # Compiler configuration
     gcc_formula_str = "gcc"
@@ -63,9 +61,7 @@ class Elmer < Formula
     sdk_path = MacOS.sdk_path
     sdk_version = Utils.safe_popen_read("xcrun", "--show-sdk-version").strip
 
-    if build.head? && sdk_version < "15.5"
-      odie "Homebrew GCC requires macOS SDK 15.5 or newer (found #{sdk_version})"
-    end
+    odie "Homebrew GCC requires macOS SDK 15.5 or newer (found #{sdk_version})" if build.head? && sdk_version < "15.5"
 
     # Build sysroot flags
     sys_root = use_gcc ? "--sysroot=#{sdk_path}" : "-isysroot #{sdk_path}"
@@ -99,7 +95,7 @@ class Elmer < Formula
     cmake_args << "-DCMAKE_Fortran_COMPILER=#{gcc_formula.opt_bin}/gfortran-#{gcc_version}"
 
     # Linear algebra
-    blas_lib = Formula["openblas"].opt_lib/shared_library("libopenblas")
+    blas_lib = formula_opt_lib("openblas")/shared_library("libopenblas")
     cmake_args << "-DBLAS_LIBRARIES:STRING=#{blas_lib};-lpthread"
     cmake_args << "-DLAPACK_LIBRARIES:STRING=#{blas_lib};-lpthread"
 
@@ -141,7 +137,6 @@ class Elmer < Formula
     # =============================================================================
     configure_elmergui(cmake_args, use_gcc) if build.with?("elmergui")
 
-
     # SDK and flags
     cmake_args << "-DCMAKE_OSX_SYSROOT=#{sdk_path}"
     cmake_args << "-DCMAKE_C_FLAGS=#{c_flags}"
@@ -173,14 +168,14 @@ class Elmer < Formula
 
   def configure_mumps(cmake_args)
     cmake_args << "-DWITH_Mumps=ON"
-    cmake_args << "-DMUMPS_ROOT=#{Formula["brewsci/num/brewsci-mumps"].opt_prefix}"
+    cmake_args << "-DMUMPS_ROOT=#{formula_opt_prefix("brewsci/num/brewsci-mumps")}"
     # brewsci-mumps is built with ScaLAPACK ordering plus (Par)Metis, so Elmer's
     # FindMumps also requires ScaLAPACK, ParMetis and Metis. Point each finder at
     # the right keg through the *_ROOT environment hints they consult. Note metis.h
     # lives in brewsci-metis (not brewsci-parmetis), so METIS_ROOT is set separately.
-    ENV["SCALAPACK_ROOT"] = Formula["scalapack"].opt_prefix.to_s
-    ENV["PARMETIS_ROOT"]  = Formula["brewsci/num/brewsci-parmetis"].opt_prefix.to_s
-    ENV["METIS_ROOT"]     = Formula["brewsci/num/brewsci-metis"].opt_prefix.to_s
+    ENV["SCALAPACK_ROOT"] = formula_opt_prefix("scalapack").to_s
+    ENV["PARMETIS_ROOT"]  = formula_opt_prefix("brewsci/num/brewsci-parmetis").to_s
+    ENV["METIS_ROOT"]     = formula_opt_prefix("brewsci/num/brewsci-metis").to_s
   end
 
   def configure_elmergui(cmake_args, use_gcc)
@@ -199,7 +194,7 @@ class Elmer < Formula
       odie dep_message.call(qwt_dep) unless Formula[qwt_dep].any_version_installed?
 
       cmake_args << "-DWITH_QT5=ON"
-      qt5_lib = Formula[qt5_dep].opt_lib
+      qt5_lib = formula_opt_lib(qt5_dep)
       cmake_args << "-DQt5_DIR=#{qt5_lib}/cmake/Qt5"
       # ElmerGUI FIND_PACKAGEs each Qt5 component; qt@5 is keg-only so point each
       # component at its config dir explicitly (mirrors the Qt6 branch below).
@@ -215,7 +210,7 @@ class Elmer < Formula
     else
       qwt_dep = "qwt"
       cmake_args << "-DWITH_QT6=ON"
-      qt_lib = Formula["qtbase"].opt_lib
+      qt_lib = formula_opt_lib("qtbase")
       cmake_args << "-DQt6_DIR=#{qt_lib}/cmake/Qt6"
       %w[Xml PrintSupport OpenGL OpenGLWidgets].each do |mod|
         cmake_args << "-DQt6#{mod}_DIR=#{qt_lib}/cmake/Qt6#{mod}"
